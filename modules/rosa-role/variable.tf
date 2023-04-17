@@ -1,0 +1,1 @@
+variable "CLUSTER_PREFIX" {}
