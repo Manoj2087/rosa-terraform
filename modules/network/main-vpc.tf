@@ -56,18 +56,20 @@ resource "aws_subnet" "private_subnet" {
 
 # Create NATGW and its EIP
 resource "aws_eip" "nat_gw_eip" {
+  count = "${var.MULTI_AZ ? 3 : 1}"
   vpc      = true
   tags = {
-    Name = "${format("%s-nat-gw-eip",var.CLUSTER_PREFIX)}"
+    Name = "${format("%s-nat-gw-eip-%d",var.CLUSTER_PREFIX, count.index )}"
   }
 }
 
 resource "aws_nat_gateway" "nat_gw" {
-  allocation_id = aws_eip.nat_gw_eip.id
-  subnet_id     = aws_subnet.private_subnet[0].id
+  count = "${var.MULTI_AZ ? 3 : 1}"
+  allocation_id = aws_eip.nat_gw_eip[count.index].id
+  subnet_id     = aws_subnet.public_subnet[count.index].id
 
   tags = {
-    Name = "${format("%s-nat-gw",var.CLUSTER_PREFIX)}"
+    Name = "${format("%s-nat-gw-%s",var.CLUSTER_PREFIX, data.aws_availability_zones.azs.names[count.index])}"
   }
 
   # To ensure proper ordering, it is recommended to add an explicit dependency
@@ -117,26 +119,29 @@ resource "aws_route_table_association" "public_rt_association" {
 # Associate Private Route table to private subnets
 # Create private Route Table
 resource "aws_route_table" "private_rt" {
+  count = "${var.MULTI_AZ ? 3 : 1}"
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "${format("%s-private-rt",var.CLUSTER_PREFIX)}"
+    Name = "${format("%s-private-rt-%s",var.CLUSTER_PREFIX, data.aws_availability_zones.azs.names[count.index])}"
   }
 }
 # route to NATGW
 resource "aws_route" "private_natgw" {
-  route_table_id            = aws_route_table.private_rt.id
+  count = "${var.MULTI_AZ ? 3 : 1}"
+  route_table_id            = aws_route_table.private_rt[count.index].id
   destination_cidr_block    = "0.0.0.0/0"
-  nat_gateway_id            = aws_nat_gateway.nat_gw.id
+  nat_gateway_id            = aws_nat_gateway.nat_gw[count.index].id
 }
 # route to S3 private endpoint
 resource "aws_vpc_endpoint_route_table_association" "private_private_endpoint_s3" {
-  route_table_id  = aws_route_table.private_rt.id
+  count = "${var.MULTI_AZ ? 3 : 1}"
+  route_table_id  = aws_route_table.private_rt[count.index].id
   vpc_endpoint_id = aws_vpc_endpoint.vpc_endpoint_s3.id
 }
 # associate private rt to private subnets
 resource "aws_route_table_association" "private_rt_association" {
   count = "${var.MULTI_AZ ? 3 : 1}"
   subnet_id      = aws_subnet.private_subnet[count.index].id
-  route_table_id = aws_route_table.private_rt.id
+  route_table_id = aws_route_table.private_rt[count.index].id
 }

@@ -15,7 +15,15 @@ output "worker_role_arn" {
 }
 
 output "private_subnet_id" {
-  value = "${module.network.private_subnet_id}"
+  value = "${join(",", module.network.private_subnet_id)}"
+}
+
+output "public_subnet_id" {
+  value = "${join(",", module.network.public_subnet_id)}"
+}
+
+output "all_subnet_id" {
+  value = "${join(",", module.network.public_subnet_id)},${join(",", module.network.private_subnet_id)}"
 }
 
 output "test" {
