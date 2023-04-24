@@ -1,0 +1,105 @@
+#!/bin/bash
+
+#output to log
+PROGNAME=delete-rosa-cluster
+LOGPATH="$HOME/.terraform-rosa/logs/$PROGNAME"
+mkdir -p $LOGPATH
+exec > >(tee -a -i $LOGPATH/$(date +'%Y-%m-%d-%H%M%S').log) 2>&1
+exec 2>&1
+#Print commands and their arguments as they are executed
+#set -x
+#Script start time
+scriptStartTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME Script"
+echo "started at $(date)"
+echo "---------------------------------"
+
+#Error handling function
+function funErrorExit() {
+	echo "---------------------------------"
+	echo "$${FUNCNAME[0]}"
+	echo "---------------------------------"
+  rosa logout
+	echo "ERROR: $${PROGNAME}: $${1:-"Unknown Error"}" 1>&2
+	exit 125
+}
+
+function funInitialChecks() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  # check if ROSA CLI is installed
+  rosa version || \
+    funErrorExit "ROSA CLI not installed"
+  # Login into ROSA CLI using the ROSA offline Access Token passed as sensitive_environment
+  rosa logout
+  rosa login --token $ROSA_OFFLINE_ACCESS_TOKEN \
+    || funErrorExit "ROSA Login failed"
+  rosa whoami
+  # check if JQ is installed
+  jq --version || \
+    funErrorExit "jq not installed"
+}
+
+function funNoClusterFound() {
+  echo "Cluster '${ cluster_prefix }' not found, nothing to delete"
+  rosa logout
+  #Script End time
+  scriptEndTime=`date +%s`
+  echo "---------------------------------"
+  echo "$PROGNAME completed successfully"
+  echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+  echo "---------------------------------"
+  echo "success"
+  exit 0
+}
+
+function funDeleteCluster() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  rosa describe cluster --cluster ${ cluster_prefix } -o json \
+    || funNoClusterFound    
+  clusterID=$(rosa describe cluster --cluster ${ cluster_prefix } -o json | jq .id -r)
+  rosaStatus=$(rosa describe cluster --cluster ${ cluster_prefix } -o json | jq .state -r)
+  echo "ROSA state: $rosaStatus"
+  if [[ $rosaStatus == "ready" ]]
+  then
+    rosa delete cluster \
+      --cluster ${ cluster_prefix } \
+      %{ if debug == true }--debug %{ endif }\
+      --yes \
+    || funErrorExit "Unable to find the ROSA cluster ID"
+    rosa logs uninstall \
+      --cluster ${ cluster_prefix } \
+      %{ if debug == true }--debug %{ endif }\
+      --watch \
+    || funErrorExit "Unable to find the ROSA cluster ID"
+    rosa delete operator-roles \
+      --cluster $${clusterID} \
+      --mode auto \
+      %{ if debug == true }--debug %{ endif }\
+      --yes \
+    || funErrorExit "Unable to find the ROSA cluster ID"
+    rosa delete oidc-provider \
+      -c $${clusterID} \
+      --mode auto \
+      %{ if debug == true }--debug %{ endif }\
+      --yes \
+    || funErrorExit "Unable to find the ROSA cluster ID"
+  fi
+}
+
+# Main
+funInitialChecks
+funDeleteCluster
+
+rosa logout
+#Script End time
+scriptEndTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME completed successfully"
+echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+echo "---------------------------------"
+echo "success"

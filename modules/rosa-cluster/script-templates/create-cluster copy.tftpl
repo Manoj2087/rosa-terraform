@@ -1,0 +1,142 @@
+#!/bin/bash
+
+#output to log
+PROGNAME=$(basename $0)
+PROGNAMEWOEXTN=$${PROGNAME%%.*}
+LOGPATH="/var/log/terraform-rosa/$PROGNAMEWOEXTN"
+mkdir -p $LOGPATH
+exec > >(tee -a -i $LOGPATH/$(date +'%Y-%m-%d-%H%M%S-%N').log) 2>&1
+exec 2>&1
+#Print commands and their arguments as they are executed
+#set -x
+#Script start time
+scriptStartTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME Script "
+echo "started at $(date)"
+echo "---------------------------------"
+
+#Error handling function
+function funErrorExit() {
+	echo "---------------------------------"
+	echo "$${FUNCNAME[0]}"
+	echo "---------------------------------"
+	echo
+	echo ***error***
+	echo "$${PROGNAME}: $${1:-"Unknown Error"}" 1>&2
+	#Script End time
+  scriptEndTime=`date +%s`
+  echo "---------------------------------"
+  echo "completed with error"
+  echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+  echo "---------------------------------"
+	echo "fail"
+	exit 1
+}
+
+
+rosa version >>./test.txt 2>&1
+
+rosa logout >>./test.txt 2>&1 \
+  && rosa login --token $ROSA_OFFLINE_ACCESS_TOKEN >>./test.txt 2>&1
+
+rosa whoami >>./test.txt 2>&1
+
+rosa create cluster \
+--cluster-name ${ cluster_prefix } \
+--sts \
+--role-arn ${ installer_role_arn } \
+--support-role-arn ${ installer_role_arn } \
+--controlplane-iam-role ${ controlplane_role_arn } \
+--worker-iam-role ${ worker_role_arn } \
+--operator-roles-prefix ${ cluster_prefix } \
+--version ${ ocp_version } \
+%{ if multi_az == true }--multi-az %{ endif }\
+--subnet-ids ${ subnet_ids } \
+%{ if private_cluster == true }--private-link %{ endif }\
+--compute-machine-type ${ worker_machine_type } \
+--replicas 3 \
+--machine-cidr 10.0.0.0/16 \
+--service-cidr 172.30.0.0/16 \
+--pod-cidr 10.128.0.0/14 \
+--host-prefix 23 \
+--region ${ aws_region } \
+--output json \
+--yes \
+--debug \
+--dry-run >>./test.txt 2>&1
+
+
+rosa logout >>./test.txt 2>&1
+
+#Script End time
+scriptEndTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME completed successfully"
+echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+echo "---------------------------------"
+echo "success"
+
+
+templatefile("./modules/rosa-cluster/script-templates/create-cluster.tftpl",{cluster_prefix = "prefix",installer_role_arn = "INSTALLER_ROLE_ARN",support_role_arn = "SUPPORT_ROLE_ARN",controlplane_role_arn = "CONTROLPLANE_ROLE_ARN",worker_role_arn = "WORKER_ROLE_ARN",ocp_version = "OCP_VERSION",subnet_ids = "ALL_SUBNET_ID",private_cluster = false,multi_az = false,worker_machine_type = "machinetype",aws_region = "AWS_REGION"})
+
+rosa create cluster \
+	--cluster-name ${ cluster_prefix } \
+	--sts \
+	--role-arn ${ installer_role_arn } \
+	--support-role-arn ${ installer_role_arn } \
+	--controlplane-iam-role ${ controlplane_role_arn } \
+	--worker-iam-role ${ worker_role_arn } \
+	--operator-roles-prefix ${ cluster_prefix } \
+	--version ${ ocp_version } \
+	%{ if multi_az == true }--multi-az %{ endif }\
+	--subnet-ids ${ subnet_ids } \
+	%{ if private_cluster == true }--private-link %{ endif }\
+	--compute-machine-type ${ worker_machine_type } \
+	--replicas ${ worker_replica } \
+	--machine-cidr ${ machine_cidr } \
+	--service-cidr ${ service_cidr } \
+	--pod-cidr ${ pod_cidr } \
+	--host-prefix ${ host_prefix } \
+	--region ${ aws_region } \
+	%{ if debug == true }--debug %{ endif }\
+	--yes
+
+rosa create cluster \
+	--cluster-name rosa \
+	--sts \
+	--role-arn arn:aws:iam::808082629126:role/rosa-installer-role \
+	--support-role-arn arn:aws:iam::808082629126:role/rosa-support-role \
+	--controlplane-iam-role arn:aws:iam::808082629126:role/rosa-controlplane-role \
+	--worker-iam-role arn:aws:iam::808082629126:role/rosa-worker-role \
+	--operator-roles-prefix rosa \
+	--version 4.12.8 \
+  \
+	--subnet-ids subnet-0c7baed3980922853,subnet-0c9e454d4e3b19417 \
+	\
+	--compute-machine-type t3a.xlarge \
+	--replicas 2 \
+	--machine-cidr 10.0.0.0/16 \
+	--service-cidr 172.30.0.0/16 \
+	--pod-cidr 10.128.0.0/14 \
+	--host-prefix 23 \
+	--region ap-southeast-2 \
+	--debug \
+	--yes
+
+rosa create operator-roles \
+	--cluster rosa \
+	--mode auto \
+	--debug \
+	--yes
+
+rosa create oidc-provider \
+	--cluster rosa \
+	--mode auto \
+	--debug \
+	--yes
+
+rosa logs install \
+	--cluster rosa \
+	--debug \
+	--watch

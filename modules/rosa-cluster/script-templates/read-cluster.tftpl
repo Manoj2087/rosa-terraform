@@ -1,0 +1,7 @@
+#!/bin/bash
+
+rosa logout
+rosa login --token $ROSA_OFFLINE_ACCESS_TOKEN
+rosa describe cluster --cluster ${ cluster_prefix } -o json
+# consoleURL=$(rosa describe cluster --cluster ${ cluster_prefix } -o json | jq .console.url -r)
+rosa logout >/dev/null

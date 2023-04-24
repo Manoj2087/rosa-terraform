@@ -6,7 +6,6 @@ output "public_subnet_id" {
   value = "${aws_subnet.public_subnet.*.id}"
 }
 
-
-output "test" {
-  value = "${aws_vpc_endpoint.vpc_endpoint_s3.id}"
+output "private_natgw_route_id" {
+  value = "${aws_route.private_natgw.*.id}"
 }

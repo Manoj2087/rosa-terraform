@@ -30,3 +30,7 @@ override.tf.json
 
 # ignore folder
 .my-git-ignore-folder
+# *.skip
+
+# ignore .tfvars
+*.tfvars

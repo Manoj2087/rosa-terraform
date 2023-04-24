@@ -1,0 +1,154 @@
+#!/bin/bash
+
+#output to log
+PROGNAME=create-rosa-cluster
+LOGPATH="$HOME/.terraform-rosa/logs/$PROGNAME"
+mkdir -p $LOGPATH
+exec > >(tee -a -i $LOGPATH/$(date +'%Y-%m-%d-%H%M%S').log) 2>&1
+exec 2>&1
+#Print commands and their arguments as they are executed
+#set -x
+#Script start time
+scriptStartTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME Script"
+echo "started at $(date)"
+echo "---------------------------------"
+
+#Error handling function
+function funErrorExit() {
+	echo "---------------------------------"
+	echo "$${FUNCNAME[0]}"
+	echo "---------------------------------"
+  rosa logout
+	echo "ERROR: $${PROGNAME}: $${1:-"Unknown Error"}" 1>&2
+	exit 125
+}
+
+function funInitialChecks() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  # check if ROSA CLI is installed
+  rosa version || \
+    funErrorExit "ROSA CLI not installed"
+  # Login into ROSA CLI using the ROSA offline Access Token passed as sensitive_environment
+  rosa logout
+  rosa login --token $ROSA_OFFLINE_ACCESS_TOKEN \
+    || funErrorExit "ROSA Login failed"
+  rosa whoami
+  # check if JQ is installed
+  jq --version || \
+    funErrorExit "jq not installed"
+}
+
+function funCleanUpOnFailure() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  local errorMessage="$1"
+  clusterID=$(rosa describe cluster -c ${ cluster_prefix } -o json | jq .id -r)
+  rosaStatus=$(rosa describe cluster -c ${ cluster_prefix } -o json | jq .state -r)
+  echo "ROSA state: $rosaStatus"
+  if [[ $rosaStatus == "waiting" ]] || [[ $rosaStatus == "error" ]]
+  then
+    rosa delete cluster --cluster ${ cluster_prefix } --yes
+    rosa logs uninstall --cluster ${ cluster_prefix } --watch
+    rosa delete operator-roles -c $${clusterID} --mode auto --yes
+    rosa delete oidc-provider -c $${clusterID} --mode auto --yes
+    echo "Cleanup on failure complete"
+  fi
+
+  funErrorExit "$errorMessage"
+}
+
+function funCreateROSACluster() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  rosa create cluster \
+    --cluster-name ${ cluster_prefix } \
+    --sts \
+    --role-arn ${ installer_role_arn } \
+    --support-role-arn ${ installer_role_arn } \
+    --controlplane-iam-role ${ controlplane_role_arn } \
+    --worker-iam-role ${ worker_role_arn } \
+    --operator-roles-prefix ${ cluster_prefix } \
+    --version ${ ocp_version } \
+    %{ if multi_az == true }--multi-az %{ endif }\
+    --subnet-ids ${ subnet_ids } \
+    %{ if private_cluster == true }--private-link %{ endif }\
+    --compute-machine-type ${ worker_machine_type } \
+    --replicas ${ worker_replica } \
+    --machine-cidr ${ machine_cidr } \
+    --service-cidr ${ service_cidr } \
+    --pod-cidr ${ pod_cidr } \
+    --host-prefix ${ host_prefix } \
+    --region ${ aws_region } \
+    %{ if debug == true }--debug %{ endif }\
+    --yes \
+  || funCleanUpOnFailure "Create rosa cluster failed"
+}
+
+function funCreateOperatorRoles() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  rosa create operator-roles \
+    --cluster ${ cluster_prefix } \
+    --mode auto \
+    %{ if debug == true }--debug %{ endif }\
+    --yes \
+  || funCleanUpOnFailure "Create operator role failed"
+}
+
+function funCreateOIDCProvider() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  rosa create oidc-provider \
+    --cluster ${ cluster_prefix } \
+    --mode auto \
+    %{ if debug == true }--debug %{ endif }\
+    --yes \
+  || funCleanUpOnFailure "Create OIDC Provider role failed"
+}
+
+function funWatchROSAClusterInstall() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  rosa logs install \
+    --cluster ${ cluster_prefix } \
+    %{ if debug == true }--debug %{ endif }\
+    --watch \
+  || funCleanUpOnFailure "Watch ROSA Cluster failed"
+}
+
+function funDescribeROSACluster() {
+  echo "---------------------------------"
+  echo "$${FUNCNAME[0]}"
+  echo "---------------------------------"
+  rosa describe cluster \
+    --cluster ${ cluster_prefix } \
+    %{ if debug == true }--debug %{ endif }\
+    --output json
+}
+
+# Main
+funInitialChecks
+funCreateROSACluster
+funCreateOperatorRoles
+funCreateOIDCProvider
+funWatchROSAClusterInstall
+funDescribeROSACluster
+
+
+rosa logout
+#Script End time
+scriptEndTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME completed successfully"
+echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+echo "---------------------------------"
+echo "success"
