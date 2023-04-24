@@ -47,13 +47,13 @@ function funCleanUpOnFailure() {
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
   local errorMessage="$1"
-  clusterID=$(rosa describe cluster -c ${ cluster_prefix } -o json | jq .id -r)
-  rosaStatus=$(rosa describe cluster -c ${ cluster_prefix } -o json | jq .state -r)
+  clusterID=$(rosa describe cluster -c ${ cluster_name } -o json | jq .id -r)
+  rosaStatus=$(rosa describe cluster -c ${ cluster_name } -o json | jq .state -r)
   echo "ROSA state: $rosaStatus"
   if [[ $rosaStatus == "waiting" ]] || [[ $rosaStatus == "error" ]]
   then
-    rosa delete cluster --cluster ${ cluster_prefix } --yes
-    rosa logs uninstall --cluster ${ cluster_prefix } --watch
+    rosa delete cluster --cluster ${ cluster_name } --yes
+    rosa logs uninstall --cluster ${ cluster_name } --watch
     rosa delete operator-roles -c $${clusterID} --mode auto --yes
     rosa delete oidc-provider -c $${clusterID} --mode auto --yes
     echo "Cleanup on failure complete"
@@ -67,13 +67,13 @@ function funCreateROSACluster() {
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
   rosa create cluster \
-    --cluster-name ${ cluster_prefix } \
+    --cluster-name ${ cluster_name } \
     --sts \
     --role-arn ${ installer_role_arn } \
     --support-role-arn ${ installer_role_arn } \
     --controlplane-iam-role ${ controlplane_role_arn } \
     --worker-iam-role ${ worker_role_arn } \
-    --operator-roles-prefix ${ cluster_prefix } \
+    --operator-roles-prefix ${ cluster_name } \
     --version ${ ocp_version } \
     %{ if multi_az == true }--multi-az %{ endif }\
     --subnet-ids ${ subnet_ids } \
@@ -95,7 +95,7 @@ function funCreateOperatorRoles() {
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
   rosa create operator-roles \
-    --cluster ${ cluster_prefix } \
+    --cluster ${ cluster_name } \
     --mode auto \
     %{ if debug == true }--debug %{ endif }\
     --yes \
@@ -107,7 +107,7 @@ function funCreateOIDCProvider() {
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
   rosa create oidc-provider \
-    --cluster ${ cluster_prefix } \
+    --cluster ${ cluster_name } \
     --mode auto \
     %{ if debug == true }--debug %{ endif }\
     --yes \
@@ -119,7 +119,7 @@ function funWatchROSAClusterInstall() {
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
   rosa logs install \
-    --cluster ${ cluster_prefix } \
+    --cluster ${ cluster_name } \
     %{ if debug == true }--debug %{ endif }\
     --watch \
   || funCleanUpOnFailure "Watch ROSA Cluster failed"
@@ -130,7 +130,7 @@ function funDescribeROSACluster() {
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
   rosa describe cluster \
-    --cluster ${ cluster_prefix } \
+    --cluster ${ cluster_name } \
     %{ if debug == true }--debug %{ endif }\
     --output json
 }

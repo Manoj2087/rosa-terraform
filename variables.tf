@@ -2,17 +2,49 @@ variable "ENV" {
   type = string
   default = "dev"
   validation {
-    condition     = contains(["dev", "prod"], var.ENV)
-    error_message = "Valid values for var: ENV are (dev, prod)."
+    condition     = contains(["dev", "prd"], var.ENV) && length(var.ENV) < 4
+    error_message = "Valid values for var: ENV are (dev, prod). And max 3 characters"
   } 
 }
 
-variable "AWS_REGION" {
-  default = "ap-southeast-2"
+# variable "AWS_REGION" {
+#   type = string
+#   default = "ap-southeast-2"
+#   validation {
+#     condition     = contains(["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-2"], var.AWS_REGION)
+#     error_message = "Valid values for var: ENV are (ap-northeast-1,ap-northeast-2,ap-northeast-3,ap-south-1,ap-southeast-1,ap-southeast-2,ca-central-1,eu-central-1,eu-north-1,eu-west-1,eu-west-2,eu-west-3,sa-east-1,us-east-1,us-east-2,us-west-2)."
+#   } 
+# }
+
+variable "AWS_REGION_SHORT" {
+  type = map
+  default = {
+    ap-northeast-1 = "apne1"
+    ap-northeast-2 = "apne2"
+    ap-northeast-3 = "apne3"
+    ap-south-1 = "aps1"
+    ap-southeast-1 = "apse1"
+    ap-southeast-2 = "apse2"
+    ca-central-1 = "cac1"
+    eu-central-1 = "euc1"
+    eu-north-1 = "eun1"
+    eu-west-1 = "euw1"
+    eu-west-2 = "euw2"
+    eu-west-3 = "euw3"
+    sa-east-1 = "sae1"
+    us-east-1 = "use1"
+    us-east-2 = "use2"
+    us-west-2 = "usw2"
+  }
 }
 
 variable "CLUSTER_PREFIX" {
+  type = string
   default = "rosa"
+  validation {
+    condition     = length(var.CLUSTER_PREFIX) < 6
+    error_message = "And max 5 characters"
+  } 
 }
 
 variable "VPC_CIDR" {
@@ -21,8 +53,11 @@ variable "VPC_CIDR" {
 
 
 variable "MULTI_AZ" {
-  type = bool
-  default = false
+  type = map
+  default = {
+    dev = false
+    prod = true
+  }
 }
 
 variable "PRIVATE_CLUSTER" {

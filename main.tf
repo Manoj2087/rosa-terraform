@@ -1,12 +1,14 @@
+data "aws_region" "current_region" {}
+
 resource "shell_script" "rosa_cluster" {
   lifecycle_commands {
     create = templatefile("${path.module}/script-templates/create-cluster.tftpl",
         {
-          cluster_prefix = var.CLUSTER_PREFIX,
-          installer_role_arn = module.role.installer_role_arn,
-          support_role_arn = module.role.support_role_arn,
-          controlplane_role_arn = module.role.controlplane_role_arn,
-          worker_role_arn = module.role.worker_role_arn,
+          cluster_name = format("%s-%s-%s",var.CLUSTER_PREFIX,var.ENV,var.AWS_REGION_SHORT[data.aws_region.current_region.name]),
+          installer_role_arn = module.rosa-role.installer_role_arn,
+          support_role_arn = module.rosa-role.support_role_arn,
+          controlplane_role_arn = module.rosa-role.controlplane_role_arn,
+          worker_role_arn = module.rosa-role.worker_role_arn,
           ocp_version = var.OCP_VERSION,
           multi_az = var.MULTI_AZ,
           subnet_ids = var.PRIVATE_CLUSTER ? join(",", module.network.private_subnet_id) : join(",", module.network.public_subnet_id, module.network.private_subnet_id),
@@ -17,19 +19,19 @@ resource "shell_script" "rosa_cluster" {
           service_cidr = var.SERVICE_CIDR,
           pod_cidr = var.POD_CIDR,
           host_prefix = var.HOST_PREFIX,
-          aws_region = var.AWS_REGION,
+          aws_region = data.aws_region.current_region.name,
           debug = false,
         }
     )
     read = templatefile("${path.module}/script-templates/read-cluster.tftpl",
         {
-          cluster_prefix = var.CLUSTER_PREFIX
+          cluster_name = format("%s-%s-%s",var.CLUSTER_PREFIX,var.ENV,var.AWS_REGION_SHORT[data.aws_region.current_region.name])
         }
     )
     # update = file("${path.module}/scripts/update.sh")
     delete = templatefile("${path.module}/script-templates/delete-cluster.tftpl",
         {
-          cluster_prefix = var.CLUSTER_PREFIX,
+          cluster_name = format("%s-%s-%s",var.CLUSTER_PREFIX,var.ENV,var.AWS_REGION_SHORT[data.aws_region.current_region.name]),
           debug = false
         }
     )
@@ -44,7 +46,7 @@ resource "shell_script" "rosa_cluster" {
   interpreter = ["/bin/bash", "-c"]
   depends_on = [
     module.network,
-    module.role
+    module.rosa-role
   ]
 
 }

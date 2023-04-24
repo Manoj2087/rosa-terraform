@@ -43,7 +43,7 @@ function funInitialChecks() {
 }
 
 function funNoClusterFound() {
-  echo "Cluster '${ cluster_prefix }' not found, nothing to delete"
+  echo "Cluster '${ cluster_name }' not found, nothing to delete"
   rosa logout
   #Script End time
   scriptEndTime=`date +%s`
@@ -59,20 +59,20 @@ function funDeleteCluster() {
   echo "---------------------------------"
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
-  rosa describe cluster --cluster ${ cluster_prefix } -o json \
+  rosa describe cluster --cluster ${ cluster_name } -o json \
     || funNoClusterFound    
-  clusterID=$(rosa describe cluster --cluster ${ cluster_prefix } -o json | jq .id -r)
-  rosaStatus=$(rosa describe cluster --cluster ${ cluster_prefix } -o json | jq .state -r)
+  clusterID=$(rosa describe cluster --cluster ${ cluster_name } -o json | jq .id -r)
+  rosaStatus=$(rosa describe cluster --cluster ${ cluster_name } -o json | jq .state -r)
   echo "ROSA state: $rosaStatus"
   if [[ $rosaStatus == "ready" ]]
   then
     rosa delete cluster \
-      --cluster ${ cluster_prefix } \
+      --cluster ${ cluster_name } \
       %{ if debug == true }--debug %{ endif }\
       --yes \
     || funErrorExit "Unable to find the ROSA cluster ID"
     rosa logs uninstall \
-      --cluster ${ cluster_prefix } \
+      --cluster ${ cluster_name } \
       %{ if debug == true }--debug %{ endif }\
       --watch \
     || funErrorExit "Unable to find the ROSA cluster ID"
