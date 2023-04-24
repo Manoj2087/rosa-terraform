@@ -22,10 +22,18 @@ output "all_subnet_id" {
   value = "${join(",", module.network.public_subnet_id)},${join(",", module.network.private_subnet_id)}"
 }
 
+# output "rosa_console_url" {
+#   value = "${module.rosa-cluster.rosa_console_url.url}"
+# }
+
+# output "rosa_console_id" {
+#   value = "${module.rosa-cluster.rosa_cluster_id}"
+# }
+
 output "rosa_console_url" {
-  value = "${module.rosa-cluster.rosa_console_url.url}"
+    value = "${jsondecode(shell_script.rosa_cluster.output.console)}"
 }
 
-output "rosa_console_id" {
-  value = "${module.rosa-cluster.rosa_cluster_id}"
+output "rosa_cluster_id" {
+    value = "${shell_script.rosa_cluster.output.id}"
 }

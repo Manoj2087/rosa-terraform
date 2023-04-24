@@ -34,3 +34,35 @@ variable "ROSA_TOKEN" {
   type = string
   sensitive = true
 }
+
+variable "OCP_VERSION" {
+  default = "4.12.12"
+}
+
+variable "WORKER_MACHINE_TYPE" {
+  type = map
+  default = {
+    dev = "t3a.xlarge"
+    prod = "m5.xlarge"
+  }
+}
+
+variable "WORKER_MACHINE_REPLICA" {
+  type = map
+  default = {
+    dev = 2
+    prod = 3
+  }
+}
+
+variable "SERVICE_CIDR" {
+  default = "172.30.0.0/16"
+}
+
+variable "POD_CIDR" {
+  default = "10.128.0.0/14"
+}
+
+variable "HOST_PREFIX" {
+  default = 23
+}

@@ -3,25 +3,22 @@ resource "shell_script" "rosa_cluster" {
     create = templatefile("${path.module}/script-templates/create-cluster.tftpl",
         {
           cluster_prefix = var.CLUSTER_PREFIX,
-          installer_role_arn = var.INSTALLER_ROLE_ARN,
-          support_role_arn = var.SUPPORT_ROLE_ARN,
-          controlplane_role_arn = var.CONTROLPLANE_ROLE_ARN,
-          worker_role_arn = var.WORKER_ROLE_ARN,
+          installer_role_arn = module.role.installer_role_arn,
+          support_role_arn = module.role.support_role_arn,
+          controlplane_role_arn = module.role.controlplane_role_arn,
+          worker_role_arn = module.role.worker_role_arn,
           ocp_version = var.OCP_VERSION,
           multi_az = var.MULTI_AZ,
-          subnet_ids = var.PRIVATE_CLUSTER ? var.PRIVATE_SUBNET_ID : var.ALL_SUBNET_ID,
+          subnet_ids = var.PRIVATE_CLUSTER ? join(",", module.network.private_subnet_id) : join(",", module.network.public_subnet_id, module.network.private_subnet_id),
           private_cluster = var.PRIVATE_CLUSTER,
           worker_machine_type = var.WORKER_MACHINE_TYPE[var.ENV],
           worker_replica = var.WORKER_MACHINE_REPLICA[var.ENV],
-          machine_cidr = var.MACHINE_CIDR,
+          machine_cidr = var.VPC_CIDR,
           service_cidr = var.SERVICE_CIDR,
           pod_cidr = var.POD_CIDR,
           host_prefix = var.HOST_PREFIX,
           aws_region = var.AWS_REGION,
           debug = false,
-          /* this variable is only created as dependency to ensure the NATGW 
-          and its route are created in the network module before this module starts */
-          private_natgw_route_id = var.PRIVATE_NATGW_ROUTE_ID
         }
     )
     read = templatefile("${path.module}/script-templates/read-cluster.tftpl",
@@ -33,14 +30,7 @@ resource "shell_script" "rosa_cluster" {
     delete = templatefile("${path.module}/script-templates/delete-cluster.tftpl",
         {
           cluster_prefix = var.CLUSTER_PREFIX,
-          debug = false,
-          /* this variable is only created as dependency to ensure the NATGW 
-          and its route are created in the network module before this module starts */
-          installer_role_arn = var.INSTALLER_ROLE_ARN,
-          support_role_arn = var.SUPPORT_ROLE_ARN,
-          controlplane_role_arn = var.CONTROLPLANE_ROLE_ARN,
-          worker_role_arn = var.WORKER_ROLE_ARN,
-          private_natgw_route_id = var.PRIVATE_NATGW_ROUTE_ID
+          debug = false
         }
     )
   }
@@ -52,6 +42,9 @@ resource "shell_script" "rosa_cluster" {
   }
 
   interpreter = ["/bin/bash", "-c"]
-
+  depends_on = [
+    module.network,
+    module.role
+  ]
 
 }
