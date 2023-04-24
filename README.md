@@ -40,7 +40,7 @@ The error logs for the creation and deletion og rosa cluster are pushed to the b
 
 If there is issue with the creation or deletion to get detailed error set `debug = true`
 
-update `modules/rosa-cluster/main.tf`
+update `main.tf`
 
 ````
 resource "shell_script" "rosa_cluster" {
