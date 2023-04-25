@@ -3,7 +3,7 @@ variable "ENV" {
   default = "dev"
   validation {
     condition     = contains(["dev", "prd"], var.ENV) && length(var.ENV) < 4
-    error_message = "Valid values for var: ENV are (dev, prod). And max 3 characters"
+    error_message = "Valid values for var: ENV are (dev - Development , prd - Production). And max 3 characters"
   } 
 }
 
@@ -56,7 +56,7 @@ variable "MULTI_AZ" {
   type = map
   default = {
     dev = false
-    prod = true
+    prd = true
   }
 }
 
@@ -78,7 +78,7 @@ variable "WORKER_MACHINE_TYPE" {
   type = map
   default = {
     dev = "t3a.xlarge"
-    prod = "m5.xlarge"
+    prd = "m5.xlarge"
   }
 }
 
@@ -86,7 +86,7 @@ variable "WORKER_MACHINE_REPLICA" {
   type = map
   default = {
     dev = 2
-    prod = 3
+    prd = 3
   }
 }
 
