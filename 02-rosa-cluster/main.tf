@@ -15,7 +15,7 @@ resource "shell_script" "rosa_cluster" {
           private_cluster = var.PRIVATE_CLUSTER,
           worker_machine_type = var.WORKER_MACHINE_TYPE[var.ENV],
           worker_replica = var.WORKER_MACHINE_REPLICA[var.ENV],
-          machine_cidr = var.VPC_CIDR,
+          machine_cidr = var.VPC_CIDR[var.ENV],
           service_cidr = var.SERVICE_CIDR,
           pod_cidr = var.POD_CIDR,
           host_prefix = var.HOST_PREFIX,

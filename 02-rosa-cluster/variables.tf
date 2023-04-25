@@ -1,6 +1,6 @@
 variable "ENV" {
   type = string
-  default = "dev"
+  default = "prd"
   validation {
     condition     = contains(["dev", "prd"], var.ENV) && length(var.ENV) < 4
     error_message = "Valid values for var: ENV are (dev - Development , prd - Production). And max 3 characters"
@@ -48,7 +48,11 @@ variable "CLUSTER_PREFIX" {
 }
 
 variable "VPC_CIDR" {
-  default = "10.0.0.0/16"
+  type = map
+  default = {
+    dev = "10.0.0.0/16"
+    prd = "10.1.0.0/16"
+  }
 }
 
 
