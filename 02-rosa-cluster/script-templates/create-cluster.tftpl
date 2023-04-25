@@ -42,30 +42,49 @@ function funInitialChecks() {
     funErrorExit "jq not installed"
 }
 
+function funSkipInstall() {
+  local localRosaStatus="$1"
+  echo "Cluster '${ cluster_name }' is already exists in the state $${localRosaStatus}, nothing to create"
+  rosa logout
+  #Script End time
+  scriptEndTime=`date +%s`
+  echo "---------------------------------"
+  echo "$PROGNAME completed successfully"
+  echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+  echo "---------------------------------"
+  echo "success"
+  exit 0
+}
+
 function funCleanUpOnFailure() {
   echo "---------------------------------"
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
-  local errorMessage="$1"
-  clusterID=$(rosa describe cluster -c ${ cluster_name } -o json | jq .id -r)
-  rosaStatus=$(rosa describe cluster -c ${ cluster_name } -o json | jq .state -r)
-  echo "ROSA state: $rosaStatus"
-  if [[ $rosaStatus == "waiting" ]] || [[ $rosaStatus == "error" ]]
+  local localErrorMessage="$1"
+  local localClusterID=$(rosa describe cluster -c ${ cluster_name } -o json | jq .id -r)
+  local localRosaStatus=$(rosa describe cluster -c ${ cluster_name } -o json | jq .state -r)
+  echo "ROSA state: $localRosaStatus"
+  if [[ $localRosaStatus == "waiting" ]] || [[ $localRosaStatus == "error" ]]
   then
     rosa delete cluster --cluster ${ cluster_name } --yes
     rosa logs uninstall --cluster ${ cluster_name } --watch
-    rosa delete operator-roles -c $${clusterID} --mode auto --yes
-    rosa delete oidc-provider -c $${clusterID} --mode auto --yes
+    rosa delete operator-roles -c $${localClusterID} --mode auto --yes
+    rosa delete oidc-provider -c $${localClusterID} --mode auto --yes
     echo "Cleanup on failure complete"
   fi
 
-  funErrorExit "$errorMessage"
+  funErrorExit "$localErrorMessage"
 }
 
 function funCreateROSACluster() {
   echo "---------------------------------"
   echo "$${FUNCNAME[0]}"
   echo "---------------------------------"
+  # local localRosaStatus=$(rosa describe cluster -c ${ cluster_name } -o json | jq .state -r)
+  # if [[ $localRosaStatus == "ready" ]] || [[ $localRosaStatus == "installing" ]]
+  # then
+  #   funSkipInstall $localRosaStatus
+  # fi
   rosa create cluster \
     --cluster-name ${ cluster_name } \
     --sts \
