@@ -10,7 +10,7 @@ resource "shell_script" "rosa_cluster" {
           controlplane_role_arn = module.rosa-role.controlplane_role_arn,
           worker_role_arn = module.rosa-role.worker_role_arn,
           ocp_version = var.OCP_VERSION,
-          multi_az = var.MULTI_AZ,
+          multi_az = var.MULTI_AZ[var.ENV],
           subnet_ids = var.PRIVATE_CLUSTER ? join(",", module.network.private_subnet_id) : join(",", module.network.public_subnet_id, module.network.private_subnet_id),
           private_cluster = var.PRIVATE_CLUSTER,
           worker_machine_type = var.WORKER_MACHINE_TYPE[var.ENV],

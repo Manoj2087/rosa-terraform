@@ -25,7 +25,7 @@ resource "aws_internet_gateway" "igw" {
 # Create public subnets
 # create 3 subnets over 3 az if multi-ax is true else one subnet on 1 az
 resource "aws_subnet" "public_subnet" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   vpc_id     = aws_vpc.vpc.id
 
   cidr_block = "${cidrsubnet(var.VPC_CIDR, 8, count.index)}"
@@ -38,7 +38,7 @@ resource "aws_subnet" "public_subnet" {
 # Create private subnets
 # create 3 subnets over 3 az if multi-ax is true else one subnet on 1 az
 resource "aws_subnet" "private_subnet" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   vpc_id     = aws_vpc.vpc.id
 
   cidr_block = "${cidrsubnet(var.VPC_CIDR, 8, count.index + 3)}"
@@ -50,7 +50,7 @@ resource "aws_subnet" "private_subnet" {
 
 # Create NATGW and its EIP
 resource "aws_eip" "nat_gw_eip" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   vpc      = true
   tags = {
     Name = "${format("%s-%s-%s-nat-gw-%d",var.CLUSTER_PREFIX,var.ENV,var.AWS_REGION_SHORT,count.index )}"
@@ -58,7 +58,7 @@ resource "aws_eip" "nat_gw_eip" {
 }
 
 resource "aws_nat_gateway" "nat_gw" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   allocation_id = aws_eip.nat_gw_eip[count.index].id
   subnet_id     = aws_subnet.public_subnet[count.index].id
 
@@ -103,7 +103,7 @@ resource "aws_vpc_endpoint_route_table_association" "public_private_endpoint_s3"
 }
 #associate route to public subnets
 resource "aws_route_table_association" "public_rt_association" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_rt.id
 }
@@ -113,7 +113,7 @@ resource "aws_route_table_association" "public_rt_association" {
 # Associate Private Route table to private subnets
 # Create private Route Table
 resource "aws_route_table" "private_rt" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   vpc_id = aws_vpc.vpc.id
 
   tags = {
@@ -122,20 +122,20 @@ resource "aws_route_table" "private_rt" {
 }
 # route to NATGW
 resource "aws_route" "private_natgw" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   route_table_id            = aws_route_table.private_rt[count.index].id
   destination_cidr_block    = "0.0.0.0/0"
   nat_gateway_id            = aws_nat_gateway.nat_gw[count.index].id
 }
 # route to S3 private endpoint
 resource "aws_vpc_endpoint_route_table_association" "private_private_endpoint_s3" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   route_table_id  = aws_route_table.private_rt[count.index].id
   vpc_endpoint_id = aws_vpc_endpoint.vpc_endpoint_s3.id
 }
 # associate private rt to private subnets
 resource "aws_route_table_association" "private_rt_association" {
-  count = "${var.MULTI_AZ[var.ENV] ? 3 : 1}"
+  count = "${var.MULTI_AZ ? 3 : 1}"
   subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.private_rt[count.index].id
 }

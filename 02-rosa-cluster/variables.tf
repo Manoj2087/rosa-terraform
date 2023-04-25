@@ -105,3 +105,12 @@ variable "POD_CIDR" {
 variable "HOST_PREFIX" {
   default = 23
 }
+
+variable "TRANSIT_GATEWAY_USED" {
+  type = bool
+  default = false
+}
+
+variable "TRANSIT_GATEWAY_ID" {
+  default = "tgw-xxxxxxxxxxxxxxxxx"
+}
