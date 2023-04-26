@@ -3,7 +3,7 @@ data "aws_availability_zones" "azs" {}
 
 # Create VPC
 resource "aws_vpc" "vpc" {
-  cidr_block       = var.VPC_CIDR
+  cidr_block       = var.EGRESS_VPC_CIDR
   instance_tenancy = "default"
 	enable_dns_support = "true"
 	enable_dns_hostnames = "true"
@@ -28,7 +28,7 @@ resource "aws_subnet" "public_subnet" {
   count = "${var.MULTI_AZ ? 2 : 1}"
   vpc_id     = aws_vpc.vpc.id
 
-  cidr_block = "${cidrsubnet(var.VPC_CIDR, 8, count.index)}"
+  cidr_block = "${cidrsubnet(var.EGRESS_VPC_CIDR, 8, count.index)}"
   availability_zone = "${data.aws_availability_zones.azs.names[count.index]}"
   tags = {
     Name = "${format("%s-public-%s",var.NAME,data.aws_availability_zones.azs.names[count.index])}"
@@ -41,7 +41,7 @@ resource "aws_subnet" "private_subnet" {
   count = "${var.MULTI_AZ ? 2 : 1}"
   vpc_id     = aws_vpc.vpc.id
 
-  cidr_block = "${cidrsubnet(var.VPC_CIDR, 8, count.index + 3)}"
+  cidr_block = "${cidrsubnet(var.EGRESS_VPC_CIDR, 8, count.index + 3)}"
   availability_zone = "${data.aws_availability_zones.azs.names[count.index]}"
   tags = {
     Name = "${format("%s-private-%s",var.NAME,data.aws_availability_zones.azs.names[count.index])}"
@@ -69,54 +69,6 @@ resource "aws_nat_gateway" "nat_gw" {
   # To ensure proper ordering, it is recommended to add an explicit dependency
   # on the Internet Gateway for the VPC.
   depends_on = [aws_internet_gateway.igw]
-}
-
-# Create public Route Table and its routes
-# Associate Public Route table to public subnets
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.vpc.id
-
-  tags = {
-    Name = "${format("%s-public",var.NAME)}"
-  }
-}
-#Routes to igw
-resource "aws_route" "public_igw" {
-  route_table_id            = aws_route_table.public_rt.id
-  destination_cidr_block    = "0.0.0.0/0"
-  gateway_id                = aws_internet_gateway.igw.id
-}
-#associate route to public subnets
-resource "aws_route_table_association" "public_rt_association" {
-  count = "${var.MULTI_AZ ? 2 : 1}"
-  subnet_id      = aws_subnet.public_subnet[count.index].id
-  route_table_id = aws_route_table.public_rt.id
-}
-
-# Create Private Route Table and its routes
-# Associate Private Route table to Private subnets
-# Associate Private Route table to private subnets
-# Create private Route Table
-resource "aws_route_table" "private_rt" {
-  count = "${var.MULTI_AZ ? 2 : 1}"
-  vpc_id = aws_vpc.vpc.id
-
-  tags = {
-    Name = "${format("%s-private-%s",var.NAME,data.aws_availability_zones.azs.names[count.index])}"
-  }
-}
-# route to NATGW
-resource "aws_route" "private_natgw" {
-  count = "${var.MULTI_AZ ? 2 : 1}"
-  route_table_id            = aws_route_table.private_rt[count.index].id
-  destination_cidr_block    = "0.0.0.0/0"
-  nat_gateway_id            = aws_nat_gateway.nat_gw[count.index].id
-}
-# associate private rt to private subnets
-resource "aws_route_table_association" "private_rt_association" {
-  count = "${var.MULTI_AZ ? 2 : 1}"
-  subnet_id      = aws_subnet.private_subnet[count.index].id
-  route_table_id = aws_route_table.private_rt[count.index].id
 }
 
 # Create Transit GW
@@ -155,17 +107,58 @@ resource "aws_ec2_transit_gateway_route" "internet_egress" {
   transit_gateway_route_table_id = aws_ec2_transit_gateway.egress_transit_gateway.association_default_route_table_id
 }
 
-# Other VPC CIDR to add to route via Transit GW
-resource "aws_route" "transit_gw_route_1" {
-  count = "${var.MULTI_AZ ? 2 : 1}"
-  route_table_id            = aws_route_table.private_rt[count.index].id
-  destination_cidr_block    = "10.0.0.0/16"
+# Create public Route Table and its routes
+# Associate Public Route table to public subnets
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.vpc.id
+
+  tags = {
+    Name = "${format("%s-public",var.NAME)}"
+  }
+}
+#Routes to igw
+resource "aws_route" "public_igw" {
+  route_table_id            = aws_route_table.public_rt.id
+  destination_cidr_block    = "0.0.0.0/0"
+  gateway_id                = aws_internet_gateway.igw.id
+}
+#Routes to Spoke VPC via Transit GW
+resource "aws_route" "spokevpc_tgw" {
+  for_each = toset( var.SPOKE_EGRESS_VPC_CIDR_BLOCKS )
+  route_table_id            = aws_route_table.public_rt.id
+  destination_cidr_block    = each.key
   transit_gateway_id        = aws_ec2_transit_gateway.egress_transit_gateway.id
 }
-resource "aws_route" "transit_gw_route_2" {
+#associate route to public subnets
+resource "aws_route_table_association" "public_rt_association" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  subnet_id      = aws_subnet.public_subnet[count.index].id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+# Create Private Route Table and its routes
+# Associate Private Route table to Private subnets
+# Associate Private Route table to private subnets
+# Create private Route Table
+resource "aws_route_table" "private_rt" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  vpc_id = aws_vpc.vpc.id
+
+  tags = {
+    Name = "${format("%s-private-%s",var.NAME,data.aws_availability_zones.azs.names[count.index])}"
+  }
+}
+# route to NATGW
+resource "aws_route" "private_natgw" {
   count = "${var.MULTI_AZ ? 2 : 1}"
   route_table_id            = aws_route_table.private_rt[count.index].id
-  destination_cidr_block    = "10.1.0.0/16"
-  transit_gateway_id        = aws_ec2_transit_gateway.egress_transit_gateway.id
+  destination_cidr_block    = "0.0.0.0/0"
+  nat_gateway_id            = aws_nat_gateway.nat_gw[count.index].id
+}
+# associate private rt to private subnets
+resource "aws_route_table_association" "private_rt_association" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = aws_route_table.private_rt[count.index].id
 }
 

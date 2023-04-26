@@ -1,4 +1,5 @@
 variable "NAME" {}
-variable "VPC_CIDR" {}
+variable "EGRESS_VPC_CIDR" {}
 variable "MULTI_AZ" {}
 variable "TRANSIT_GATEWAY_ASN" {}
+variable "SPOKE_EGRESS_VPC_CIDR_BLOCKS" {}
