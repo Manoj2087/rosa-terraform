@@ -1,6 +1,9 @@
 data "aws_region" "current_region" {}
 
 resource "shell_script" "rosa_cluster" {
+  lifecycle {
+    ignore_changes = all
+  }
   lifecycle_commands {
     create = templatefile("${path.module}/script-templates/create-cluster.tftpl",
         {

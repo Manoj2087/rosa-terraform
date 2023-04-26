@@ -1,20 +1,26 @@
+variable "ROSA_TOKEN" {
+  type = string
+  sensitive = true
+}
+
 variable "ENV" {
   type = string
-  default = "prd"
   validation {
     condition     = contains(["dev", "prd"], var.ENV) && length(var.ENV) < 4
     error_message = "Valid values for var: ENV are (dev - Development , prd - Production). And max 3 characters"
   } 
 }
 
-# variable "AWS_REGION" {
-#   type = string
-#   default = "ap-southeast-2"
-#   validation {
-#     condition     = contains(["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-2"], var.AWS_REGION)
-#     error_message = "Valid values for var: ENV are (ap-northeast-1,ap-northeast-2,ap-northeast-3,ap-south-1,ap-southeast-1,ap-southeast-2,ca-central-1,eu-central-1,eu-north-1,eu-west-1,eu-west-2,eu-west-3,sa-east-1,us-east-1,us-east-2,us-west-2)."
-#   } 
-# }
+variable "PRIVATE_CLUSTER" {
+  type = bool
+}
+variable "TRANSIT_GATEWAY_USED" {
+  type = bool
+}
+
+variable "TRANSIT_GATEWAY_ID" {
+  type = string
+}
 
 variable "AWS_REGION_SHORT" {
   type = map
@@ -64,16 +70,6 @@ variable "MULTI_AZ" {
   }
 }
 
-variable "PRIVATE_CLUSTER" {
-  type = bool
-  default = false
-}
-
-variable "ROSA_TOKEN" {
-  type = string
-  sensitive = true
-}
-
 variable "OCP_VERSION" {
   default = "4.12.12"
 }
@@ -106,11 +102,3 @@ variable "HOST_PREFIX" {
   default = 23
 }
 
-variable "TRANSIT_GATEWAY_USED" {
-  type = bool
-  default = false
-}
-
-variable "TRANSIT_GATEWAY_ID" {
-  default = "tgw-xxxxxxxxxxxxxxxxx"
-}
