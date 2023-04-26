@@ -149,6 +149,12 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "egress_vpc" {
   }
 }
 
+resource "aws_ec2_transit_gateway_route" "internet_egress" {
+  destination_cidr_block         = "0.0.0.0/0"
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.egress_vpc.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway.egress_transit_gateway.association_default_route_table_id
+}
+
 # Other VPC CIDR to add to route via Transit GW
 resource "aws_route" "transit_gw_route_1" {
   count = "${var.MULTI_AZ ? 2 : 1}"
@@ -162,3 +168,4 @@ resource "aws_route" "transit_gw_route_2" {
   destination_cidr_block    = "10.1.0.0/16"
   transit_gateway_id        = aws_ec2_transit_gateway.egress_transit_gateway.id
 }
+
