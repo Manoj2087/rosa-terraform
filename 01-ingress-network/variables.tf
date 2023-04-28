@@ -23,7 +23,7 @@ variable "SPOKE_EGRESS_VPC_CIDR_BLOCKS" {
 }
 
 
-variable "LINUX_BASTION_CONFIG" {
+variable "LINUX_WORKSTATION_CONFIG" {
   type = map
   default = {
     count = 1,
@@ -33,7 +33,7 @@ variable "LINUX_BASTION_CONFIG" {
   }
 }
 
-variable "WINDOWS_BASTION_CONFIG" {
+variable "WINDOWS_WORKSTATION_CONFIG" {
   type = map
   default = {
     count = 1,

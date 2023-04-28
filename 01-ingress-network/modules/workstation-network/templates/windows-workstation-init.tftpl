@@ -1,6 +1,6 @@
 <powershell>
 $Json = Get-SECSecretValue `
-  -SecretId ${ windowsBastionSecretARN } `
+  -SecretId ${ windowsWorkstationSecretARN } `
   -Select SecretString `
   | ConvertFrom-Json
 echo $Json.username
