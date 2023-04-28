@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#Note: use $${} to skip the terraform templating variable
+
+#output to log
+PROGNAME=$(basename $0)
+exec > >(tee -a -i /var/log/terraform-$PROGNAME-$(date +'20%y-%m-%d-%H%M').log)
+exec 2>&1
+#Print commands and their arguments as they are executed
+# set -x
+#set -e
+#Script start time
+scriptStartTime=`date +%s`
+echo "---------------------------------"
+echo "$PROGNAME Script "
+echo "started at $(date)"
+echo "---------------------------------"
+
+#Variable declaration
+hostName=${ hostnames }
+#Other variables
+
+#Error handling function
+function funErrorExit() {
+	echo
+	echo "ERROR: $${PROGNAME}: $${1:-"Unknown Error"}" 1>&2
+	#Script End time
+	scriptEndTime=`date +%s`
+	echo "---------------------------------"
+	echo "completed with error"
+	echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+	echo "---------------------------------"
+	exit 1
+}
+
+#Function Set Hostname
+function funSetHostName() {
+	echo "---------------------------------"
+  echo "Running $${FUNCNAME[0]}"
+  echo "---------------------------------"
+  hostnamectl set-hostname --static $hostName
+  echo "preserve_hostname: true" >> /etc/cloud/cloud.cfg
+  #Reload the profile to update the HOSTNAME variable
+  source /etc/profile
+}
+
+#Function Install necessry tools
+function funInstallTools() {
+	echo "---------------------------------"
+  echo "Running $${FUNCNAME[0]}"
+  echo "---------------------------------"
+  yum install -y jq
+  yum install wget -y
+  wget -O oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+  tar xvf oc.tar.gz
+  mv oc /usr/local/sbin/
+  mv kubectl /usr/local/sbin/
+  oc version
+  kubectl version
+  #check SSM agent status
+  sudo systemctl status amazon-ssm-agent
+}
+
+
+#Call functions
+funSetHostName
+funInstallTools
+
+
+#Script End time
+scriptEndTime=`date +%s`
+echo "---------------------------------"
+echo "completed successfully"
+echo "script runtime: $((scriptEndTime-scriptStartTime))s "
+echo "---------------------------------"

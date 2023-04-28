@@ -25,6 +25,11 @@ run the below command to create the [ocm-role](https://docs.openshift.com/rosa/r
 
 4. Multi AZ Public Cluster (Private link)
 
+5. Single AZ Private Cluster (Private link) with Egress VPC
+
+6. Multi AZ Private Cluster (Private link) with Egress VPC
+
+6.1 post deployment add the private Route to your bastion vpc to resolve the private cluster name.
 
 # Troubleshooting
 
@@ -84,3 +89,10 @@ resource "shell_script" "rosa_cluster" {
   interpreter = ["/bin/bash", "-c"]
 }
 ````
+
+## Future Enhancement
+1. Linux Bastion host support with SSM - working now 
+1. Windows Bastion host support
+1. Egress vpc AWS Firewall support
+1. Network Debug flag deploy a debug machine
+1. Use ROSA_TOKEN env var to rosa cli login

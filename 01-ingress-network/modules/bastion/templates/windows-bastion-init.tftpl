@@ -1,0 +1,19 @@
+<powershell>
+$Json = Get-SECSecretValue `
+  -SecretId ${ windowsBastionSecretARN } `
+  -Select SecretString `
+  | ConvertFrom-Json
+echo $Json.username
+$NewLocalRDPUser = $Json.username
+$Password = ConvertTo-SecureString `
+  -String $Json.password `
+  -AsPlainText `
+  -Force
+New-LocalUser "$NewLocalRDPUser" `
+  -Password $Password `
+  -FullName "$NewLocalRDPUser" `
+  -Description "Temporary RDSP user"
+Add-LocalGroupMember `
+  -Group "Remote Desktop Users" `
+  -Member $NewLocalRDPUser
+</powershell>
