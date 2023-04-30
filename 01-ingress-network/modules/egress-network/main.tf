@@ -129,6 +129,12 @@ resource "aws_route" "spokevpc_tgw" {
   destination_cidr_block    = each.key
   transit_gateway_id        = aws_ec2_transit_gateway.egress_transit_gateway.id
 }
+#Route to the workstation VPC
+resource "aws_route" "workstationvpc_tgw" {
+  route_table_id            = aws_route_table.public_rt.id
+  destination_cidr_block    = var.WORKSTATION_VPC_CIDR
+  transit_gateway_id        = aws_ec2_transit_gateway.egress_transit_gateway.id
+}
 #associate route to public subnets
 resource "aws_route_table_association" "public_rt_association" {
   count = "${var.MULTI_AZ ? 2 : 1}"

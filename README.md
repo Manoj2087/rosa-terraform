@@ -33,6 +33,11 @@ run the below command to create the [ocm-role](https://docs.openshift.com/rosa/r
 
 # Troubleshooting
 
+## Unable to ressolve the openshift console url or the openshift api from the Workstation VPC
+The issue is because the Workstation VPC does not have access to the Private Route53 zone created by ROSA cluster deployment. 
+
+To resolve this [associate](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-associate-vpcs.html) your Workstation VPC id to the Private Hosted Zone name `<cluster_name>.<xxxx>.p1.openshift.com` created by the ROSA deployment. Once this step is done give it few minutes to the DNS to refresh.
+
 ## Logs for creating or deletion of rosa cluster
 
 The error logs for the creation and deletion og rosa cluster are pushed to the below location

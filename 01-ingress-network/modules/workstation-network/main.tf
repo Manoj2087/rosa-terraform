@@ -1,4 +1,73 @@
 # workstation Network
+# fetch the AZvailability Zone
+data "aws_availability_zones" "azs" {}
+
+data "aws_region" "current_region" {}
+
+# Create VPC
+resource "aws_vpc" "vpc" {
+  cidr_block       = var.WORKSTATION_VPC_CIDR
+  instance_tenancy = "default"
+	enable_dns_support = "true"
+	enable_dns_hostnames = "true"
+
+  tags = {
+    Name = "${format("%s",var.NAME)}"
+  }
+}
+
+# Create private subnets
+# create 2 private subnets over 2 az if multi-az is true else one subnet on 1 az
+resource "aws_subnet" "private_subnet" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  vpc_id     = aws_vpc.vpc.id
+
+  cidr_block = "${cidrsubnet(var.WORKSTATION_VPC_CIDR, 8, count.index + 3)}"
+  availability_zone = "${data.aws_availability_zones.azs.names[count.index]}"
+  tags = {
+    Name = "${format("%s-private-%s",var.NAME,data.aws_availability_zones.azs.names[count.index])}"
+  }
+}
+
+# Create Private Route Table and its routes
+# Associate Private Route table to Private subnets
+# Associate Private Route table to private subnets
+# Create private Route Table
+resource "aws_route_table" "private_rt" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  vpc_id = aws_vpc.vpc.id
+
+  tags = {
+    Name = "${format("%s-private-%s",var.NAME,data.aws_availability_zones.azs.names[count.index])}"
+  }
+}
+# route all traffic via Transit GW to  egress VPC
+resource "aws_route" "private_transitgw" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  route_table_id            = aws_route_table.private_rt[count.index].id
+  destination_cidr_block    = "0.0.0.0/0"
+  transit_gateway_id        =  var.TRANSIT_GATEWAY_ID
+}
+# associate private rt to private subnets
+resource "aws_route_table_association" "private_rt_association" {
+  count = "${var.MULTI_AZ ? 2 : 1}"
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = aws_route_table.private_rt[count.index].id
+}
+
+# Create transit gateway attachment - to vpc private subnet
+resource "aws_ec2_transit_gateway_vpc_attachment" "vpc" {
+  subnet_ids         = aws_subnet.private_subnet.*.id
+  transit_gateway_id = var.TRANSIT_GATEWAY_ID
+  vpc_id             = aws_vpc.vpc.id
+  appliance_mode_support = "disable"
+  dns_support = "enable"
+  transit_gateway_default_route_table_association = true
+  transit_gateway_default_route_table_propagation = true
+  tags = {
+    Name = "${format("%s-vpc",var.NAME)}"
+  }
+}
 
 
 # Lookup Amazon Linux 2 ami
@@ -52,7 +121,7 @@ resource "aws_instance" "linux-workstation" {
     hostnames   = format("linux-workstation-%d",count.index + 1)
   })
 	iam_instance_profile = "${aws_iam_instance_profile.linux_workstation_instance.name}"
-  subnet_id = "${var.SUBNET_ID[count.index]}"
+  subnet_id = "${aws_subnet.private_subnet[count.index].id}"
 	tags = {
 		Name = "${format("linux-workstation-%d",count.index + 1)}"
 	}
@@ -172,7 +241,7 @@ resource "aws_instance" "windows-workstation" {
       windowsWorkstationSecretARN = aws_secretsmanager_secret.windows-workstation-rdp-user.arn
     })
 	iam_instance_profile = "${aws_iam_instance_profile.windows_workstation_instance.name}"
-  subnet_id = "${var.SUBNET_ID[count.index]}"
+  subnet_id = "${aws_subnet.private_subnet[count.index].id}"
 	tags = {
 		Name = "${format("windows-workstation-%d",count.index + 1)}"
 	}
@@ -184,3 +253,36 @@ resource "aws_instance" "windows-workstation" {
 		volume_size = "${lookup(var.WINDOWS_WORKSTATION_CONFIG, "volume_size")}"
 	}
 }
+
+# resource "aws_vpc_endpoint" "ssm" {
+#   vpc_id            = aws_vpc.vpc.id
+#   service_name      = "${format("com.amazonaws.%s.ssm",data.aws_region.current_region.name)}"
+#   vpc_endpoint_type = "Interface"
+#   # security_group_ids = [
+#   #   aws_security_group.sg1.id,
+#   # ]
+#   private_dns_enabled = true
+#   tags = {
+#     Name = "${format("%s-ssm",var.NAME)}"
+#   }
+# }
+
+# resource "aws_vpc_endpoint" "ec2messages" {
+#   vpc_id            = aws_vpc.vpc.id
+#   service_name      = "${format("com.amazonaws.%s.ec2messages",data.aws_region.current_region.name)}"
+#   vpc_endpoint_type = "Interface"
+#   private_dns_enabled = true
+#   tags = {
+#     Name = "${format("%s-ec2messages",var.NAME)}"
+#   }
+# }
+
+# resource "aws_vpc_endpoint" "ssmmessages" {
+#   vpc_id            = aws_vpc.vpc.id
+#   service_name      = "${format("com.amazonaws.%s.ssmmessages",data.aws_region.current_region.name)}"
+#   vpc_endpoint_type = "Interface"
+#   private_dns_enabled = true
+#   tags = {
+#     Name = "${format("%s-ssmmessages",var.NAME)}"
+#   }
+# }
