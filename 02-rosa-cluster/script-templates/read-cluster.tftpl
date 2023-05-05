@@ -1,6 +1,6 @@
 #!/bin/bash
 
 rosa logout
-rosa login --token $ROSA_OFFLINE_ACCESS_TOKEN
+rosa login
 rosa describe cluster --cluster ${ cluster_name } -o json
 rosa logout >/dev/null

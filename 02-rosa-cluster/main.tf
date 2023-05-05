@@ -43,7 +43,7 @@ resource "shell_script" "rosa_cluster" {
   environment = {}
 
   sensitive_environment = {
-    ROSA_OFFLINE_ACCESS_TOKEN = var.ROSA_TOKEN
+    ROSA_TOKEN = var.ROSA_TOKEN
   }
 
   interpreter = ["/bin/bash", "-c"]

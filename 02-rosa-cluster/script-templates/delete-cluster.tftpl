@@ -34,7 +34,7 @@ function funInitialChecks() {
     funErrorExit "ROSA CLI not installed"
   # Login into ROSA CLI using the ROSA offline Access Token passed as sensitive_environment
   rosa logout
-  rosa login --token $ROSA_OFFLINE_ACCESS_TOKEN \
+  rosa login \
     || funErrorExit "ROSA Login failed"
   rosa whoami
   # check if JQ is installed
