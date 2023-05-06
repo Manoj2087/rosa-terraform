@@ -4,6 +4,7 @@ $Json = Get-SECSecretValue `
   -Select SecretString `
   | ConvertFrom-Json
 echo $Json.username
+echo $Json.password
 $NewLocalRDPUser = $Json.username
 $Password = ConvertTo-SecureString `
   -String $Json.password `
@@ -12,7 +13,7 @@ $Password = ConvertTo-SecureString `
 New-LocalUser "$NewLocalRDPUser" `
   -Password $Password `
   -FullName "$NewLocalRDPUser" `
-  -Description "Temporary RDSP user"
+  -Description "Temporary RDP user"
 Add-LocalGroupMember `
   -Group "Remote Desktop Users" `
   -Member $NewLocalRDPUser

@@ -19,37 +19,9 @@ variable "TRANSIT_GATEWAY_ASN" {
 variable "SPOKE_EGRESS_VPC_CIDR_BLOCKS" {
   type = list
   default = [
-    "10.0.0.0/16",
-    "10.1.0.0/16",
+    "10.0.0.0/8",
   ]
 }
 
-variable "WORKSTATION_VPC_CIDR" {
-  default = "10.100.0.0/16"
-}
-
-variable "WORKSTATION_NAME" {
-  default = "workstation"
-}
-
-variable "LINUX_WORKSTATION_CONFIG" {
-  type = map
-  default = {
-    count = 1,
-    instance_type = "t3a.micro",
-    volume_type = "gp3",
-    volume_size = 50,
-  }
-}
-
-variable "WINDOWS_WORKSTATION_CONFIG" {
-  type = map
-  default = {
-    count = 1,
-    instance_type = "t3.large",
-    volume_type = "gp3",
-    volume_size = 200,
-  }
-}
 
 
