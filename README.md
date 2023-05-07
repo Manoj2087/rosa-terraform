@@ -13,60 +13,58 @@ The below tasks are one time task to be performed on your AWS account to provide
 
 * ### Install the required tools
 
-rosa cli : Refer the [link](https://docs.openshift.com/rosa/rosa_cli/rosa-get-started-cli.html) to install rosa cli.
+  rosa cli : Refer the [link](https://docs.openshift.com/rosa/rosa_cli/rosa-get-started-cli.html) to install rosa cli.
 
-jq: Refer the [link](https://stedolan.github.io/jq/download/) to install jq.
+  jq: Refer the [link](https://stedolan.github.io/jq/download/) to install jq.
 
-Terraform: Refer the [link](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) to install terraform.
+  Terraform: Refer the [link](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) to install terraform.
 
-aws cli: Refer the [link](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) to install aws cli.
+  aws cli: Refer the [link](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) to install aws cli.
 
 * ### Generate to ROSA Offile Access Token
 
-The token can be obtainer from the [link](https://console.redhat.com/openshift/token/rosa). Login using your Red Hat account.
+  The token can be obtainer from the [link](https://console.redhat.com/openshift/token/rosa). Login using your Red Hat account.
 
-test the token using the below command
+  test the token using the below command
 
-```
-export ROSA_OFFLINE_TOKEN=<token value>
-rosa login --token=$ROSA_OFFLINE_TOKEN
-```
+  ```
+  export ROSA_OFFLINE_TOKEN=<token value>
+  rosa login --token=$ROSA_OFFLINE_TOKEN
+  ```
 
-if successfull you should see the below
-`I: Logged in as '<Red Hat user>' on 'https://api.openshift.com'`
+  if successfull you should see the below
+  `I: Logged in as '<Red Hat user>' on 'https://api.openshift.com'`
 
 * ### Create Openshift Cluster Manger role 
 
-Openshift Cluster Manger role grants the required permissions for installation of ROSA clusters in OpenShift Cluster Manager. And links your 
-Red Hat and the AWS Account 
+  Openshift Cluster Manger role grants the required permissions for installation of ROSA clusters in OpenShift Cluster Manager. And links your 
+  Red Hat and the AWS Account 
 
-run the below command to create the [ocm-role](https://docs.openshift.com/rosa/rosa_architecture/rosa-sts-about-iam-resources.html#rosa-sts-understanding-ocm-role_rosa-sts-about-iam-resources)
+  run the below command to create the [ocm-role](https://docs.openshift.com/rosa/rosa_architecture/rosa-sts-about-iam-resources.html#rosa-sts-understanding-ocm-role_rosa-sts-about-iam-resources)
 
-`rosa create ocm-role --mode auto`
+  `rosa create ocm-role --mode auto`
 
 * ### Clone this repo
 
-Clone the repo
+  Clone the repo
 
-`git clone https://github.com/Manoj2087/rosa-terraform.git`
+  `git clone https://github.com/Manoj2087/rosa-terraform.git`
 
 * ### Configure AWS Credentials for Terraforrm AWS provider
 
-There are several ways to authenticate against AWS for your Terraform provider, more info refer [link](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration)
+  There are several ways to authenticate against AWS for your Terraform provider, more info refer [link](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration)
 
-#### Using AWS Cli 
-This is the simplest way for testing. Make sure the user has necessary IAM policy to perform the deployment in your AWS account 
+    #### Using AWS Cli 
+    This is the simplest way for testing. Make sure the user has necessary IAM policy to perform the deployment in your AWS account 
 
-```
-Note: for testing you can assign the user `AdministratorAccess` policy
-```
+    ```
+    Note: for testing you can assign the user `AdministratorAccess` policy
+    ```
 
-```
-aws configure
-```
-
-pass the AWS Access Key ID, AWS Secret Access Key and Default region name
-
+    Run the below command and pass the AWS Access Key ID, AWS Secret Access Key and Default region name
+    ```
+    aws configure
+    ```
 
 </details>
 
@@ -75,11 +73,11 @@ pass the AWS Access Key ID, AWS Secret Access Key and Default region name
 
 ## Deploy ROSA Cluster
 
-ROSA cluster can be deployed using different modes to support High availability and in different AWS network architecture to support you network security requirements. 
+ROSA cluster can be deployed using different modes to support High availability and in different AWS network architecture to support your network security requirements. 
 
 ### Supported ROSA deployement Architecture
 
-1. Single AZ/Multi AZ Public Cluster
+1. [Option 1] Single AZ/Multi AZ Public Cluster
 
 <details style="margin-left: 20px">
 <summary>Details</summary>
@@ -174,7 +172,7 @@ cd ..
 
 ---
 
-2. Single AZ/Multi AZ Private Cluster (Private link)
+2. [Option 2] Single AZ/Multi AZ Private Cluster (Private link)
 
 <details style="margin-left: 20px">
 <summary>Details</summary>
@@ -273,7 +271,7 @@ cd ..
 
 ---
 
-3. Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)
+3. [Option 3] Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)
 
 <details style="margin-left: 20px">
 <summary>Details</summary>
@@ -523,5 +521,3 @@ resource "shell_script" "rosa_cluster" {
 
 ### Future Enhancement
 1. Egress vpc AWS Firewall support
-1. Network Debug flag deploy a debug machine
-1. Use ROSA_TOKEN env var to rosa cli login - done
