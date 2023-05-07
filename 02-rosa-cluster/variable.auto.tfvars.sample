@@ -1,0 +1,14 @@
+# [required] Populate with the ROSA offile token.
+ROSA_TOKEN = "@@rosa-token@@"
+# [Required] 'true' to deploy multi az or 'false' to deploy single az.
+MULTI_AZ = @@multiaz@@
+# [Required] 'true' to deploy private cluster with private link or 'false' to deploy public cluster.
+PRIVATE_CLUSTER = @@private-cluster@@
+# [Required]'true' to deploy private cluster with private link or 'false' to deploy public cluster.
+TRANSIT_GATEWAY_USED = @@transitgw-used@@
+# [Required if TRANSIT_GATEWAY_USED = true] Populate with the transit gateway id.
+TRANSIT_GATEWAY_ID = "@@transitgw-id@@"
+/* [Optional] Default is 'false'. If 'true' will deploy a linux and windows workstation 
+in the rosa VPC pirvate subnet. These Workstation can be accessed via AWS Systems Manager 
+Fleet Manager. These workstations can be accessed via the ROSA private api and console. */
+DEPLOY_WORKSTATION = @@deploy-workstation@@

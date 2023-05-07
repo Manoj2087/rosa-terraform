@@ -5,23 +5,45 @@ variable "ROSA_TOKEN" {
 
 variable "ENV" {
   type = string
+  default = "tst"
   validation {
-    condition     = contains(["dev", "prd"], var.ENV) && length(var.ENV) < 4
-    error_message = "Valid values for var: ENV are (dev - Development , prd - Production). And max 3 characters"
+    condition     = contains(["tst","dev", "prd"], var.ENV) && length(var.ENV) < 4
+    error_message = "Valid values for var: ENV are (tst - Test, dev - Development , prd - Production). And max 3 characters"
   } 
+}
+
+variable "MULTI_AZ" {
+  type = bool
 }
 
 variable "PRIVATE_CLUSTER" {
   type = bool
 }
+
+variable "DEPLOY_WORKSTATION" {
+  type = bool
+  default = false
+}
+
 variable "TRANSIT_GATEWAY_USED" {
   type = bool
 }
 
 variable "TRANSIT_GATEWAY_ID" {
   type = string
+  default = ""
 }
 
+variable "CLUSTER_PREFIX" {
+  type = string
+  default = "rosa"
+  validation {
+    condition     = length(var.CLUSTER_PREFIX) < 6
+    error_message = "And max 5 characters"
+  } 
+}
+
+# List of supported regions
 variable "AWS_REGION_SHORT" {
   type = map
   default = {
@@ -44,30 +66,11 @@ variable "AWS_REGION_SHORT" {
   }
 }
 
-variable "CLUSTER_PREFIX" {
-  type = string
-  default = "rosa"
-  validation {
-    condition     = length(var.CLUSTER_PREFIX) < 6
-    error_message = "And max 5 characters"
-  } 
-}
-
+/*
+Start of ROSA Cluster Speicific variables
+*/
 variable "VPC_CIDR" {
-  type = map
-  default = {
-    dev = "10.0.0.0/16"
-    prd = "10.1.0.0/16"
-  }
-}
-
-
-variable "MULTI_AZ" {
-  type = map
-  default = {
-    dev = false
-    prd = true
-  }
+  default = "10.0.0.0/16"
 }
 
 variable "OCP_VERSION" {
@@ -75,18 +78,14 @@ variable "OCP_VERSION" {
 }
 
 variable "WORKER_MACHINE_TYPE" {
-  type = map
-  default = {
-    dev = "t3a.xlarge"
-    prd = "m5.xlarge"
-  }
+  default = "t3a.xlarge"
 }
 
 variable "WORKER_MACHINE_REPLICA" {
-  type = map
-  default = {
-    dev = 2
-    prd = 3
+  default = 2
+  validation {
+    condition     = var.WORKER_MACHINE_REPLICA > 1
+    error_message = "Min 2 for Single AZ or Min 3 for Multi AZ cluster"
   }
 }
 
@@ -101,11 +100,9 @@ variable "POD_CIDR" {
 variable "HOST_PREFIX" {
   default = 23
 }
-
-variable "DEPLOY_WORKSTATION" {
-  type = bool
-  default = false
-}
+/*
+End of ROSA Cluster Speicific variables
+*/
 
 variable "LINUX_WORKSTATION_CONFIG" {
   type = map
