@@ -1,9 +1,15 @@
 variable "NAME" {
-  default = "egress"
+  default = "rosa-egress"
 }
 
 variable "MULTI_AZ" {
-  default = false
+  type = bool
+  default = true
+}
+
+variable "DEPLOY_FIREWALL" {
+  type = bool
+  default = true
 }
 
 variable "EGRESS_VPC_CIDR" {

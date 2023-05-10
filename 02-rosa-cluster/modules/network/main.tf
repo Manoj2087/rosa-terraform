@@ -156,16 +156,69 @@ resource "aws_route_table_association" "private_rt_association" {
 }
 
 # Create transit gateway attachment - to vpc private subnet - only if Transit gateway is used for egress VPC
-resource "aws_ec2_transit_gateway_vpc_attachment" "vpc" {
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_vpc_attachment" {
   count = "${var.TRANSIT_GATEWAY_USED ? 1 : 0}"
   subnet_ids         = aws_subnet.private_subnet.*.id
   transit_gateway_id = var.TRANSIT_GATEWAY_ID
   vpc_id             = aws_vpc.vpc.id
   appliance_mode_support = "disable"
   dns_support = "enable"
-  transit_gateway_default_route_table_association = true
-  transit_gateway_default_route_table_propagation = true
+  transit_gateway_default_route_table_association = false
+  transit_gateway_default_route_table_propagation = false
   tags = {
     Name = "${format("%s-%s-%s-vpc",var.CLUSTER_PREFIX,var.ENV,var.AWS_REGION_SHORT)}"
   }
 }
+
+# Lookup Transit GW route table id - spoke 
+data "aws_ec2_transit_gateway_route_table" "spoke_route_table" {
+  count = "${var.TRANSIT_GATEWAY_USED ? 1 : 0}"
+  filter {
+    name   = "transit-gateway-id"
+    values = [var.TRANSIT_GATEWAY_ID]
+  }
+  # the below 2 tags are added as part of the Ingress vpc deployment
+  # if using a separtly created Transit gateway added the tags manually to it
+  filter {
+    name   = "tag:spoke-terraform-lookup"
+    values = ["true"]
+  }
+  filter {
+    name   = "tag:type"
+    values = ["spoke"]
+  }
+}
+
+# Lookup Transit GW route table id - egress
+data "aws_ec2_transit_gateway_route_table" "egress_route_table" {
+  count = "${var.TRANSIT_GATEWAY_USED ? 1 : 0}"
+  filter {
+    name   = "transit-gateway-id"
+    values = [var.TRANSIT_GATEWAY_ID]
+  }
+  # the below 2 tags are added as part of the Ingress vpc deployment
+  # if using a separtly created Transit gateway added the tags manually to it
+  filter {
+    name   = "tag:spoke-terraform-lookup"
+    values = ["true"]
+  }
+  filter {
+    name   = "tag:type"
+    values = ["egress"]
+  }
+}
+
+# Propagate Spoke/ROSA VPC CIDR to Egress route table
+resource "aws_ec2_transit_gateway_route_table_propagation" "egress_vpc_tgw_rt_propagation" {
+  count = "${var.TRANSIT_GATEWAY_USED ? 1 : 0}"
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke_vpc_attachment[0].id
+  transit_gateway_route_table_id = data.aws_ec2_transit_gateway_route_table.egress_route_table[0].id
+}
+
+# associate Spoke/ROSA VPC to spoke route table
+resource "aws_ec2_transit_gateway_route_table_association" "egress_vpc_tgw_rt_association" {
+  count = "${var.TRANSIT_GATEWAY_USED ? 1 : 0}"
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke_vpc_attachment[0].id
+  transit_gateway_route_table_id = data.aws_ec2_transit_gateway_route_table.spoke_route_table[0].id
+}
+
