@@ -5,4 +5,6 @@ module "workstation" {
   LINUX_WORKSTATION_CONFIG = "${var.LINUX_WORKSTATION_CONFIG}"
   WINDOWS_WORKSTATION_CONFIG = "${var.WINDOWS_WORKSTATION_CONFIG}"
   PRIVATE_SUBNET = "${module.network.private_subnet_id}"
+  AWS_REGION = "${data.aws_region.current_region.name}"
+  VPC_ID =  "${module.network.vpc_id}"
 }

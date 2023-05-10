@@ -9,3 +9,7 @@ output "public_subnet_id" {
 output "private_natgw_route_id" {
   value = "${aws_route.private_natgw.*.id}"
 }
+
+output "vpc_id" {
+  value = "${aws_vpc.vpc.id}"
+}

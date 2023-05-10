@@ -11,6 +11,38 @@ data "aws_ami" "amazon-linux-2" {
   }
 }
 
+#Create SSM VPC endpoint
+resource "aws_vpc_endpoint" "ssm_endpoint" {
+  vpc_id            = "${var.VPC_ID}"
+  service_name      = "${format("com.amazonaws.%s.ssm",var.AWS_REGION)}"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = "${var.PRIVATE_SUBNET}"
+  private_dns_enabled = true
+  tags = {
+    Name = "${format("%s-ssm-endpoint",var.NAME)}"
+  }
+}
+resource "aws_vpc_endpoint" "ssm_messages_endpoint" {
+  vpc_id            = "${var.VPC_ID}"
+  service_name      = "${format("com.amazonaws.%s.ssmmessages",var.AWS_REGION)}"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = "${var.PRIVATE_SUBNET}"
+  private_dns_enabled = true
+  tags = {
+    Name = "${format("%s-ssm-messages-endpoint",var.NAME)}"
+  }
+}
+resource "aws_vpc_endpoint" "ec2_messages_endpoint" {
+  vpc_id            = "${var.VPC_ID}"
+  service_name      = "${format("com.amazonaws.%s.ec2messages",var.AWS_REGION)}"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = "${var.PRIVATE_SUBNET}"
+  private_dns_enabled = true
+  tags = {
+    Name = "${format("%s-ec2-messages-endpoint",var.NAME)}"
+  }
+}
+
 #Create IAM Instance Profile for the workstation instance
 resource "aws_iam_role" "linux_workstation_instance" {
   name_prefix = "${format("%s-linux-",var.NAME)}"
@@ -29,7 +61,7 @@ resource "aws_iam_role" "linux_workstation_instance" {
 }
   )
   tags = {
-    name = "${format("%s-linux",var.NAME)}"
+    Name = "${format("%s-linux",var.NAME)}"
   }
 }
 resource "aws_iam_role_policy_attachment" "linux_workstation_instance" {
@@ -115,7 +147,7 @@ resource "aws_iam_role" "windows_workstation_instance" {
 }
   )
   tags = {
-    name = format("%s-windows",var.NAME)
+    Name = format("%s-windows",var.NAME)
   }
 }
 resource "aws_iam_policy" "windows_workstation_secrets" {
