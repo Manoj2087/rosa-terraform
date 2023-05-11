@@ -23,10 +23,7 @@ variable "TRANSIT_GATEWAY_ASN" {
 #Add the CIDR Range block for each VPC Part of the Transit gateway spoke
 # This required for the return trffic from the internet GW back to the respective vpc
 variable "SPOKE_EGRESS_VPC_CIDR_BLOCKS" {
-  type = list
-  default = [
-    "10.0.0.0/8",
-  ]
+  default = "10.0.0.0/8"
 }
 
 
