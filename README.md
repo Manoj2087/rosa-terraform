@@ -271,16 +271,16 @@ cd ..
 
 ---
 
-3. [Option 3] Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)
+3. [Option 3] Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)
 
 <details style="margin-left: 20px">
 <summary>Details</summary>
 
-**To deploy** `Single AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)`
+**To deploy** `Single AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)`
 <details style="margin-left: 30px">
 <summary>Details</summary>
 
-![Single AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)](documents/images/rosa-network-pattern-v1-single-az-private-tg.png)
+![Single AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)](documents/images/rosa-network-pattern-v1-single-az-private-tg.png)
 
 Deploy the Egress VPC 
 
@@ -320,12 +320,12 @@ cd ..
 
 ---
 
-**To deploy** `Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)`
+**To deploy** `Multi AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)`
 
 <details style="margin-left: 30px">
 <summary>Details</summary>
 
-![Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)](documents/images/rosa-network-pattern-v1-multi-az-private-tg.png)
+![Multi AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)](documents/images/rosa-network-pattern-v1-multi-az-private-tg.png)
 
 Deploy the Egress VPC 
 
@@ -363,7 +363,7 @@ cd ..
 
 ---
 
-**To access the console** `Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)` 
+**To access the console** `Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)` 
 
 <details style="margin-left: 30px">
 <summary>Details</summary>
@@ -383,7 +383,7 @@ Note: Since the ROSA API and Console are only accessable internally, but setting
 
 ---
 
-**To delete** `Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (via AWS Transit Gateway)`
+**To delete** `Single AZ/Multi AZ Private Cluster (Private link) with Egress VPC (with AWS Transit Gateway and AWS Network Firewall)`
 
 <details style="margin-left: 30px">
 <summary>Details</summary>
@@ -428,7 +428,12 @@ cd ..
 
 If you deploy the cluster as as private cluster. In order, to access the ROSA console, you might need a workstation with a browser within your private network. 
 
-To facilate this, as part of the Terraform deployment if the `DEPLOY_WORKSTATION` is set to true in the `02-rosa-cluster/variable.auto.tfvars` file, this will deploy a Windows worksation which will be configured with the an RDP enabled user `rdp-user`. The password for this user is stored in the AWS secrets manager as name `<cluster-prefix>-<env>-<region-short>-workstation-windows-rdp-user-<random-number>`
+To facilate this, as part of the Terraform deployment if the `DEPLOY_WORKSTATION` is set to true in the `02-rosa-cluster/variable.auto.tfvars` file, this will deploy a Windows worksation 
+
+![Private Workstation](documents/images/private-workstation.png)
+
+
+Private Windows Workatstion will be configured with the an RDP enabled user `rdp-user`. The password for this user is stored in the AWS secrets manager as name `<cluster-prefix>-<env>-<region-short>-workstation-windows-rdp-user-<random-number>`
 
 Example,
 
@@ -446,6 +451,8 @@ You can then use the AWS Systems Manager Fleet Manager - remote desktop using th
 If you deploy the cluster as as private cluster. In order, to access the ROSA api or use oc cli, you might need a linux workstation within your private network. 
 
 To facilate this, as part of the Terraform deployment if the `DEPLOY_WORKSTATION` is set to true in the `02-rosa-cluster/variable.auto.tfvars` file, this will deploy a Linux worksation. 
+
+![Private Workstation](documents/images/private-workstation.png)
 
 You can use the AWS Systems Manager Fleet Manager to start a terminal connection.
 
@@ -515,6 +522,26 @@ resource "shell_script" "rosa_cluster" {
   interpreter = ["/bin/bash", "-c"]
 }
 ````
+</details>
+
+</details>
+
+### If i dont want to deploy AWS network firewall in the Egress VPC
+
+<details style="margin-left: 30px">
+<summary>Details</summary>
+
+If you do not require the AWS Network firewall to configure your own firewall device, you can ignore the deployment by setting the below value to `false` in the `01-ingress-network/variables.tf`
+
+```
+variable "DEPLOY_FIREWALL" {
+  type = bool
+  default = false
+}
+```
+![Egress VPC without AWS Network Firewall](documents/images/egress-vpc-without-fw.png)
+
+
 </details>
 
 </details>
