@@ -471,6 +471,26 @@ The error logs for the creation and deletion of rosa cluster are pushed to the b
 
 </details>
 
+</details>
+
+### If i dont want to deploy AWS network firewall in the Egress VPC
+
+<details style="margin-left: 30px">
+<summary>Details</summary>
+
+If you do not require the AWS Network firewall to configure your own firewall device, you can ignore the deployment by setting the below value to `false` in the `01-ingress-network/variables.tf`
+
+```
+variable "DEPLOY_FIREWALL" {
+  type = bool
+  default = false
+}
+```
+![Egress VPC without AWS Network Firewall](documents/images/egress-vpc-without-fw.png)
+
+
+</details>
+
 ### Issues with creating or deletion of rosa cluster
 
 <details style="margin-left: 30px">
@@ -522,26 +542,6 @@ resource "shell_script" "rosa_cluster" {
   interpreter = ["/bin/bash", "-c"]
 }
 ````
-</details>
-
-</details>
-
-### If i dont want to deploy AWS network firewall in the Egress VPC
-
-<details style="margin-left: 30px">
-<summary>Details</summary>
-
-If you do not require the AWS Network firewall to configure your own firewall device, you can ignore the deployment by setting the below value to `false` in the `01-ingress-network/variables.tf`
-
-```
-variable "DEPLOY_FIREWALL" {
-  type = bool
-  default = false
-}
-```
-![Egress VPC without AWS Network Firewall](documents/images/egress-vpc-without-fw.png)
-
-
 </details>
 
 </details>

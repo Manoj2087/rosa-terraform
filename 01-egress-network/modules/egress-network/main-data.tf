@@ -1,2 +1,7 @@
-# fetch the AZvailability Zone
-data "aws_availability_zones" "azs" {}
+# fetch the AZvailability Zone - exclude local zones
+data "aws_availability_zones" "azs" {
+  filter {
+    name   = "zone-type"
+    values = ["availability-zone"]
+  }
+}

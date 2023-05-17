@@ -1,5 +1,7 @@
 data "aws_region" "current_region" {}
 
+data "aws_availability_zones" "azs" {}
+
 resource "shell_script" "rosa_cluster" {
   lifecycle {
     ignore_changes = all
